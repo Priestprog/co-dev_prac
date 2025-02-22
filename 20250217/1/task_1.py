@@ -1,36 +1,21 @@
 from pathlib import Path
 import sys
 import zlib
-from glob import iglob
-from os.path import basename, dirname
 
-# функция при вызове без второго аргумента
-def list_branches(repo_path):
-    repo = Path(f"{repo_path}/.git/refs/heads")
 
-    if not repo.is_dir():
-        print(f"Ошибка: {repo_path} не является каталогом.")
-        exit(0)
-
-    for item in repo.iterdir():
-        print(item.name)
-
-# Функция при вызове с вторым аргументом
-def check_branch(repo_path, branch_name):
-    with open(f"{repo_path}/.git/refs/heads/{branch_name}", "r") as f:
-        commit = f.read()
-
-    with open(f"{repo_path}/.git/objects/{commit[:2]}/{commit[2:-1]}", "rb") as f2:
+def find_commit(repo_path, commit_hash):
+    with open(f"{repo_path}/.git/objects/{commit_hash[:2]}/{commit_hash[2:]}", "rb") as f2:
         message = f2.read()
 
     decompressed_message = zlib.decompress(message)
     obj_type, _, content = decompressed_message.partition(b"\x00")
 
-    print(content.decode())
-    #Печать последенего коммита
+    return content.decode()
 
 
-    tree = content.decode().split("\n")[0].split(" ")[1]
+# Обработка всех файлов ветки
+def tree_walk(repo_path, content):
+    tree = content.split("\n")[0].split(" ")[1]
     with open(f"{repo_path}/.git/objects/{tree[:2]}/{tree[2:]}", "rb") as f3:
         tree_content = f3.read()
 
@@ -61,9 +46,42 @@ def check_branch(repo_path, branch_name):
         result.append(f"{git_modes.get(mode, "Неизвестный тип")} {sha1_hex}    {name} ")
 
     print("\n".join(result))
+
+
+# функция при вызове без второго аргумента
+def one_arg(repo_path):
+    repo = Path(f"{repo_path}/.git/refs/heads")
+
+    if not repo.is_dir():
+        print(f"Ошибка: {repo_path} не является каталогом.")
+        exit(0)
+
+    for item in repo.iterdir():
+        print(item.name)
+
+
+# Функция при вызове с вторым аргументом
+def two_arg(repo_path, branch_name):
+    with open(f"{repo_path}/.git/refs/heads/{branch_name}", "r") as f:
+        commit = f.read()
+
+    content = find_commit(repo_path, commit[:-1])
+    print(content)
+    #Печать последенего коммита
+
+    tree_walk(repo_path, content)
+    print("")
     # Печать содержимого tree на который указывает последний коммит
 
-    
+
+    with open(f"{repo_path}/.git/logs/refs/heads/{branch_name}", "r") as f4:
+        log = f4.read()
+    for el in log.split("\n")[:-1]:
+        commit_hash = el.split(" ")[1]
+        print(f"TREE for commit {commit_hash}")
+        tree_walk(repo_path, find_commit(repo_path, commit_hash))
+    # Печать содержимого tree на всех коммитах
+
 
 
 if len(sys.argv) < 2:
@@ -73,7 +91,7 @@ if len(sys.argv) < 2:
 repo_path = sys.argv[1]
 
 if len(sys.argv) == 2:
-    list_branches(repo_path)
+    one_arg(repo_path)
 else:
     branch_name = sys.argv[2]
-    check_branch(repo_path, branch_name)
+    two_arg(repo_path, branch_name)
