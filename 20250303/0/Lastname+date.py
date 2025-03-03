@@ -1,5 +1,6 @@
 import shlex
 
+
 #fio = input("ФИО: ")
 #place = input("Место рождения: ")
 fio = "Иванов Иван Иванович"
