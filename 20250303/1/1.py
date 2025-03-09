@@ -55,6 +55,9 @@ def process_addmon(args):
     try:
 
         name = args[0]
+        if name not in cowsay.CHARS.keys():
+            print("Cannot add unknown monster")
+            return
 
         i = 1
         while i < (len(args)):
@@ -66,13 +69,21 @@ def process_addmon(args):
                 else:
                     params[param_name] = args[i + 1]
                     i += 2
+            else:
+                print(f"Unknown parameter: {param_name}")
+                return
 
+        if not all(param in params for param in param_names):
+            print("Please write all parameters: hello, hp, coords")
+            return
 
         hello = params["hello"]
         hp = int(params["hp"])
         coords = params["coords"]
 
-
+        if len(coords) != 2:
+            print("Invalid coordinates")
+            return
         x, y = int(coords[0]), int(coords[1])
 
         replaced = False
