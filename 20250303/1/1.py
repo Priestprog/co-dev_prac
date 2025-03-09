@@ -1,15 +1,36 @@
 import sys
-import cowsay
+from io import StringIO
+from cowsay import read_dot_cow, cowthink
 
 FIELD_SIZE = 10
 monsters = {}
 player_x, player_y = 0, 0
 
 
+
+jgsbat = read_dot_cow(StringIO(r"""
+$the_cow = <<EOC;
+    ,_                    _,
+    ) '-._  ,_    _,  _.-' (
+    )  _.-'.|\\\\--//|.'-._  (
+     )'   .'\/o\/o\/'.   `(
+      ) .' . \====/ . '. (
+       )  / <<    >> \  (
+        '-._/``  ``\_.-'
+  jgs     __\\\\'--'//__
+         (((""`  `"")))
+EOC
+"""))
+custom_monsters = {"jgsbat": jgsbat}
+
 def encounter(x, y):
     if (x, y) in monsters:
         name, hello = monsters[(x, y)]
-        cowsay.draw(hello, cowsay.CHARS[name])
+        print(name, hello)
+        if name in custom_monsters:
+            print(cowthink(hello, cowfile=custom_monsters[name]))
+        else:
+            print(cowthink(hello, cow=name))
 
 
 def process_move(direction):
@@ -40,9 +61,6 @@ def process_addmon(args):
         print("Invalid arguments")
         return
 
-    if name not in cowsay.CHARS.keys():
-        print("Cannot add unknown monster")
-        return
 
     replaced = False
     if (x, y) in monsters:
