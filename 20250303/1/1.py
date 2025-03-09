@@ -27,7 +27,6 @@ custom_monsters = {"jgsbat": jgsbat}
 def encounter(x, y):
     if (x, y) in monsters:
         name, hello, _ = monsters[(x, y)]
-        print(name, hello)
         if name in custom_monsters:
             print(cowthink(hello, cowfile=custom_monsters[name]))
         else:
@@ -55,9 +54,6 @@ def process_addmon(args):
     try:
 
         name = args[0]
-        if name not in cowsay.CHARS.keys():
-            print("Cannot add unknown monster")
-            return
 
         i = 1
         while i < (len(args)):
