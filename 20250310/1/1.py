@@ -154,6 +154,16 @@ class Game(cmd.Cmd):
             self.monsters[(x, y)] = (name, hello, new_hp)
             print(f"{name} now has {new_hp}")
 
+    def complete_attack(self, text, line, begidx, endidx):
+        words = (line[:endidx] + ".").split()
+        arg_command = []
+        match len(words):
+            case 2:
+                arg_command =[ "with"]
+            case 3:
+                    arg_command = self.weapons
+        return [c for c in arg_command if c.startswith(text)]
+
 
 
 if __name__ == "__main__":
