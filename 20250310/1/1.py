@@ -30,6 +30,12 @@ class Game(cmd.Cmd):
         self.player_x = 0
         self.player_y = 0
         self.monsters = {}
+        self.weapons = {
+            "sword": 10,
+            "spear": 15,
+            "axe": 20,
+        }
+        self.player_weapon = "sword"
 
     def encounter(self, x, y):
         if (x, y) in self.monsters:
@@ -117,16 +123,27 @@ class Game(cmd.Cmd):
 
     def do_attack(self, arg):
         """Attack the monster in the current cell."""
-        if arg:
-            print("Attack should not have arguments.")
+        args = shlex.split(arg)
+        try:
+            if "with" in args:
+                if args[1] in self.weapons:
+                    self.player_weapon = args[1]
+                else:
+                    print("Unknown weapon")
+                    return
+        except IndexError:
+            print("Invalid argument")
             return
+
+        damage = self.weapons[self.player_weapon]
+
+
         x, y = self.player_x, self.player_y
         if (x, y) not in self.monsters:
             print("No monster here")
             return
 
         name, hello, hp = self.monsters[(x, y)]
-        damage = 10
         new_hp = hp - damage
 
         print(f"Attacked {name}, damage {damage} hp")
@@ -136,6 +153,8 @@ class Game(cmd.Cmd):
         else:
             self.monsters[(x, y)] = (name, hello, new_hp)
             print(f"{name} now has {new_hp}")
+
+
 
 if __name__ == "__main__":
     Game().cmdloop()
