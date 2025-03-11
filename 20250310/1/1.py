@@ -65,7 +65,6 @@ class Game(cmd.Cmd):
         """Move the player right."""
         self.move_player(1, 0, arg)
 
-
     def do_addmon(self, arg):
         "Add a monster to the game."
         usage = "Usage: addmon <NAME> hello <MESSAGE> hp <HP> coords <X> <Y>"
@@ -115,6 +114,28 @@ class Game(cmd.Cmd):
         except (ValueError, IndexError):
             print(f"Invalid arguments\n{usage}")
             return
-        
+
+    def do_attack(self, arg):
+        """Attack the monster in the current cell."""
+        if arg:
+            print("Attack should not have arguments.")
+            return
+        x, y = self.player_x, self.player_y
+        if (x, y) not in self.monsters:
+            print("No monster here")
+            return
+
+        name, hello, hp = self.monsters[(x, y)]
+        damage = 10
+        new_hp = hp - damage
+
+        print(f"Attacked {name}, damage {damage} hp")
+        if new_hp < 0:
+            del self.monsters[(x, y)]
+            print(f"{name} died")
+        else:
+            self.monsters[(x, y)] = (name, hello, new_hp)
+            print(f"{name} now has {new_hp}")
+
 if __name__ == "__main__":
     Game().cmdloop()
