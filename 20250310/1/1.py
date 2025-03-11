@@ -1,8 +1,9 @@
 import sys
 from io import StringIO
-from cowsay import read_dot_cow, cowthink
+from cowsay import read_dot_cow, cowthink, list_cows
 import shlex
 import cmd
+import readline
 
 
 class Game(cmd.Cmd):
@@ -117,25 +118,41 @@ class Game(cmd.Cmd):
 
     def do_attack(self, arg):
         """Attack the monster in the current cell."""
-        if arg:
-            print("Attack should not have arguments.")
-            return
-        x, y = self.player_x, self.player_y
-        if (x, y) not in self.monsters:
-            print("No monster here")
+        args = shlex.split(arg)
+        try:
+            name_monster = args[0]
+        except IndexError:
+            print("Invalid argument")
             return
 
+        x, y = self.player_x, self.player_y
+        
+        if (x, y) not in self.monsters:
+            print(f"No monsters here")
+            return
+        
         name, hello, hp = self.monsters[(x, y)]
+        if name_monster not in self.monsters[(x,y)]:
+            print(f"No {name_monster} here")
+            return
         damage = 10
         new_hp = hp - damage
 
-        print(f"Attacked {name}, damage {damage} hp")
+        print(f"Attacked {name_monster}, damage {damage} hp")
         if new_hp < 0:
             del self.monsters[(x, y)]
-            print(f"{name} died")
+            print(f"{name_monster} died")
         else:
-            self.monsters[(x, y)] = (name, hello, new_hp)
-            print(f"{name} now has {new_hp}")
+            self.monsters[(x, y)] = (name_monster, hello, new_hp)
+            print(f"{name_monster} now has {new_hp}")
+
+    def complete_attack(self, text, line, begidx, endidx):
+        words = (line[:endidx] + ".").split()
+        args_command = []
+        match len(words):
+            case 2:
+                    args_command = self.custom_monsters.keys() | list_cows()
+        return [c for c in args_command if c.startswith(text)]
 
 if __name__ == "__main__":
     Game().cmdloop()
