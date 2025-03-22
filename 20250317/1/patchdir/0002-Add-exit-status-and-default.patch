@@ -1,0 +1,33 @@
+From 598e886a81d8e407a55445705ebf907a03f834cc Mon Sep 17 00:00:00 2001
+From: priestprog <abagrov04@gmail.com>
+Date: Sat, 22 Mar 2025 03:12:12 +0300
+Subject: [PATCH 2/2] Add exit, status and default
+
+---
+ 20250317/1/1.py | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/20250317/1/1.py b/20250317/1/1.py
+index a29c072..901f824 100644
+--- a/20250317/1/1.py
++++ b/20250317/1/1.py
+@@ -40,6 +40,16 @@ class Game(cmd.Cmd):
+         self.player_weapon = "sword"
+         self.writer = writer
+ 
++    def default(self, line):
++        self.writer.write(f"Unknown command: {line}\n".encode())
++
++    def do_exit(self, arg):
++        self.writer.write(b"exit...\n")
++        return b"exit\n"
++
++    def do_status(self, arg):
++        self.writer.write(b"Server work.\n")
++
+     def encounter(self, x, y):
+         if (x, y) in self.monsters:
+             name, hello, hp = self.monsters[(x, y)]
+-- 
+2.39.3 (Apple Git-146)
+
