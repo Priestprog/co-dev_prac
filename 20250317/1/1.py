@@ -80,77 +80,46 @@ class Game(cmd.Cmd):
 
     def do_addmon(self, arg):
         "Add a monster to the game."
-        usage = "Usage: addmon <NAME> hello <MESSAGE> hp <HP> coords <X> <Y>"
         args = shlex.split(arg)
-        if not args:
-            self.writer.write(f"Invalid arguments\n{usage}\n".encode())
-            return
-
         name = args[0]
         params = {}
         param_names = ["hello", "hp", "coords"]
-        expected_params = 3
         i = 1
 
-        try:
-            while i < len(args):
-                if args[i] in param_names:
-                    param = args[i]
-                    if param == "coords":
-                        params[param] = (int(args[i + 1]), int(args[i + 2]))
-                        i += 3
-                    else:
-                        params[param] = args[i + 1]
-                        i += 2
+        while i < len(args):
+            if args[i] in param_names:
+                param = args[i]
+                if param == "coords":
+                    params[param] = (int(args[i + 1]), int(args[i + 2]))
+                    i += 3
                 else:
-                    self.writer.write(f"Invalid argument: {args[i]}\n{usage}\n".encode())
-                    return
+                    params[param] = args[i + 1]
+                    i += 2
 
-            if len(params) != expected_params:
-                self.writer.write(f"Invalid number of arguments\n{usage}\n".encode())
-                return
+        hello = params['hello']
+        hp = int(params['hp'])
+        x, y = params['coords']
 
-            hello = params['hello']
-            hp = int(params['hp'])
-            x, y = params['coords']
+        replaced = (x, y) in self.monsters
+        self.monsters[(x, y)] = (name, hello, hp)
+        self.writer.write(f"Added monster {name} at ({x}, {y}) saying {hello} with {hp} HP\n".encode())
+        if replaced:
+            self.writer.write(b"Replaced the old monster\n")
 
-            if not (0 <= x < self.field_size and 0 <= y < self.field_size):
-                self.writer.write(f"Invalid coordinates\nField size is {self.field_size}x{self.field_size}\n".encode())
-                return
-
-            replaced = (x, y) in self.monsters
-            self.monsters[(x, y)] = (name, hello, hp)
-            self.writer.write(f"Added monster {name} at ({x}, {y}) saying {hello} with {hp} HP\n".encode())
-            if replaced:
-                self.writer.write(b"Replaced the old monster\n")
-
-        except (ValueError, IndexError):
-            self.writer.write(f"Invalid arguments\n{usage}\n".encode())
-            return
 
     def do_attack(self, arg):
         """Attack the monster in the current cell."""
+
         args = shlex.split(arg)
-
         name_monster = args[0]
-
-        try:
-            if "with" in args:
-                if args[2] in self.weapons:
-                    self.player_weapon = args[2]
-                else:
-                    self.writer.write(b"Unknown weapon\n")
-                    return
-        except IndexError:
-            self.writer.write(b"Invalid argument\n")
-            return
-
+        self.player_weapon = args[2]
         damage = self.weapons[self.player_weapon]
 
         x, y = self.player_x, self.player_y
         if (x, y) not in self.monsters:
             self.writer.write(b"No monster here\n")
             return
+
         if name_monster not in self.monsters[(x,y)]:
             self.writer.write(f"No {name_monster} here\n".encode())
             return
@@ -179,6 +148,10 @@ class Game(cmd.Cmd):
         return [c for c in args_command if c.startswith(text)]
 
 
+
+
+
+
 async def handle_client(reader, writer):
     writer.write(b"<<< Welcome to Python-MUD 0.1 >>>\n")
     writer.write(b">> ")
@@ -191,29 +164,31 @@ async def handle_client(reader, writer):
         command = data.decode()
 
         test_command = shlex.split(command)
+        namecommand = test_command[0]
         allowed_commands = {"addmon", "attack",
         "up", "down", "left", "right", "exit", "status"}
         field_size = 10
 
-        if test_command[0] not in allowed_commands:
-            writer.write(b"Unknown command\n")
+
+        if namecommand not in allowed_commands:
+            writer.write(b"Unknown command\n>> ")
             continue
 
-        if test_command[0] == ["up", "down", "left", "right"]:
+        if namecommand in ["up", "down", "left", "right"]:
             if len(test_command) != 1:
-                writer.write(b"Invalid arguments\n")
+                writer.write(b"Invalid arguments\n>> ")
                 continue
 
-        if test_command[0] == "addmon":
+        if namecommand == "addmon":
             usage = "Usage: addmon <NAME> hello <MESSAGE> hp <HP> coords <X> <Y>"
             args = test_command[1:]
             if not args:
-                writer.write(f"Invalid arguments\n{usage}\n".encode())
+                writer.write(f"Invalid arguments\n{usage}\n>> ".encode())
                 continue
 
             name = args[0]
             if name not in list_cows() | game.custom_monsters.keys():
-                writer.write(f"Unknown monster {name}\n".encode())
+                writer.write(f"Unknown monster {name}\n>> ".encode())
                 continue
 
 
@@ -233,21 +208,21 @@ async def handle_client(reader, writer):
                             params[param] = args[i + 1]
                             i += 2
                     else:
-                        writer.write(f"Invalid argument: {args[i]}\n{usage}\n".encode())
+                        writer.write(f"Invalid argument: {args[i]}\n{usage}\n>> ".encode())
                         continue
 
                 if len(params) != expected_params:
-                    writer.write(f"Invalid number of arguments\n{usage}\n".encode())
+                    writer.write(f"Invalid number of arguments\n{usage}\n>> ".encode())
                     continue
                 x, y = params['coords']
 
                 if not (0 <= x < field_size and 0 <= y < field_size):
                     writer.write(
-                        f"Invalid coordinates\nField size is {field_size}x{field_size}\n".encode())
+                        f"Invalid coordinates\nField size is {field_size}x{field_size}\n>> ".encode())
                     continue
 
             except (ValueError, IndexError):
-                writer.write(f"Invalid arguments\n{usage}\n".encode())
+                writer.write(f"Invalid arguments\n{usage}\n>> ".encode())
                 continue
 
         if test_command[0] == "attack":
@@ -257,11 +232,11 @@ async def handle_client(reader, writer):
             try:
                 if "with" == args[1]:
                     if args[2] not in weapons:
-                        writer.write(b"Unknown weapon\n")
+                        writer.write(b"Unknown weapon\n>> ")
                         continue
 
             except IndexError:
-                writer.write(b"Invalid argument\n")
+                writer.write(b"Invalid argument\n>> ")
                 continue
 
 
