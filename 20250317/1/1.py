@@ -4,6 +4,7 @@ from cowsay import read_dot_cow, cowthink, list_cows
 import shlex
 import cmd
 import readline
+import asyncio
 
 
 class Game(cmd.Cmd):
@@ -26,7 +27,7 @@ class Game(cmd.Cmd):
         """))
     }
 
-    def __init__(self):
+    def __init__(self, writer):
         super().__init__()
         self.player_x = 0
         self.player_y = 0
@@ -37,23 +38,24 @@ class Game(cmd.Cmd):
             "axe": 20,
         }
         self.player_weapon = "sword"
+        self.writer = writer
 
     def encounter(self, x, y):
         if (x, y) in self.monsters:
             name, hello, hp = self.monsters[(x, y)]
             if name in self.custom_monsters:
-                print(cowthink(hello, cowfile=self.custom_monsters[name]))
+                self.writer.write((cowthink(hello, cowfile=self.custom_monsters[name])+"\n").encode())
             else:
-                print(cowthink(hello, cow=name))
+                self.writer.write((cowthink(hello, cow=name)+"\n").encode())
 
     def move_player(self, dx, dy, arg):
         """Generalized player movement function"""
         if arg:
-            print("Move commands should not have arguments.")
+            self.writer.write(b"Move commands should not have arguments.\n")
             return
         self.player_x = (self.player_x + dx) % self.field_size
         self.player_y = (self.player_y + dy) % self.field_size
-        print(f"Moved to ({self.player_x}, {self.player_y})")
+        self.writer.write(f"Moved to ({self.player_x}, {self.player_y})\n".encode())
         self.encounter(self.player_x, self.player_y)
 
     def do_up(self, arg):
@@ -77,7 +79,7 @@ class Game(cmd.Cmd):
         usage = "Usage: addmon <NAME> hello <MESSAGE> hp <HP> coords <X> <Y>"
         args = shlex.split(arg)
         if not args:
-            print(f"Invalid arguments\n{usage}")
+            self.writer.write(f"Invalid arguments\n{usage}\n".encode())
             return
 
         name = args[0]
@@ -97,11 +99,11 @@ class Game(cmd.Cmd):
                         params[param] = args[i + 1]
                         i += 2
                 else:
-                    print(f"Invalid argument: {args[i]}\n{usage}")
+                    self.writer.write(f"Invalid argument: {args[i]}\n{usage}\n".encode())
                     return
 
             if len(params) != expected_params:
-                print(f"Invalid number of arguments\n{usage}")
+                self.writer.write(f"Invalid number of arguments\n{usage}\n".encode())
                 return
 
             hello = params['hello']
@@ -109,17 +111,17 @@ class Game(cmd.Cmd):
             x, y = params['coords']
 
             if not (0 <= x < self.field_size and 0 <= y < self.field_size):
-                print(f"Invalid coordinates\nField size is {self.field_size}x{self.field_size}")
+                self.writer.write(f"Invalid coordinates\nField size is {self.field_size}x{self.field_size}\n".encode())
                 return
 
             replaced = (x, y) in self.monsters
             self.monsters[(x, y)] = (name, hello, hp)
-            print(f"Added monster {name} at ({x}, {y}) saying {hello} with {hp} HP")
+            self.writer.write(f"Added monster {name} at ({x}, {y}) saying {hello} with {hp} HP\n".encode())
             if replaced:
-                print("Replaced the old monster")
+                self.writer.write(b"Replaced the old monster\n")
 
         except (ValueError, IndexError):
-            print(f"Invalid arguments\n{usage}")
+            self.writer.write(f"Invalid arguments\n{usage}\n".encode())
             return
 
     def do_attack(self, arg):
@@ -133,32 +135,32 @@ class Game(cmd.Cmd):
                 if args[2] in self.weapons:
                     self.player_weapon = args[2]
                 else:
-                    print("Unknown weapon")
+                    self.writer.write(b"Unknown weapon\n")
                     return
         except IndexError:
-            print("Invalid argument")
+            self.writer.write(b"Invalid argument\n")
             return
 
         damage = self.weapons[self.player_weapon]
 
         x, y = self.player_x, self.player_y
         if (x, y) not in self.monsters:
-            print("No monster here")
+            self.writer.write(b"No monster here\n")
             return
         if name_monster not in self.monsters[(x,y)]:
-            print(f"No {name_monster} here")
+            self.writer.write(f"No {name_monster} here\n".encode())
             return
 
         name, hello, hp = self.monsters[(x, y)]
         new_hp = hp - damage
 
-        print(f"Attacked {name_monster}, damage {damage} hp")
-        if new_hp < 0:
+        self.writer.write(f"Attacked {name_monster}, damage {damage} hp\n".encode())
+        if new_hp <= 0:
             del self.monsters[(x, y)]
-            print(f"{name_monster} died")
+            self.writer.write(f"{name_monster} died\n".encode())
         else:
             self.monsters[(x, y)] = (name_monster, hello, new_hp)
-            print(f"{name_monster} now has {new_hp}")
+            self.writer.write(f"{name_monster} now has {new_hp}\n".encode())
 
     def complete_attack(self, text, line, begidx, endidx):
         words = (line[:endidx] + ".").split()
@@ -173,6 +175,28 @@ class Game(cmd.Cmd):
         return [c for c in args_command if c.startswith(text)]
 
 
+async def handle_client(reader, writer):
+    writer.write(b"<<< Welcome to Python-MUD 0.1 >>>\n")
+    writer.write(b">> ")
+    await writer.drain()
 
-if __name__ == "__main__":
-    Game().cmdloop()
+    game = Game(writer)
+    while data := await reader.readline():
+        if data == b'exit\n':
+            break
+        command = data.decode()
+        game.onecmd(command)
+        writer.write(b">> ")
+        await writer.drain()
+
+    writer.close()
+    await writer.wait_closed()
+
+
+async def main():
+    server = await asyncio.start_server(handle_client, '0.0.0.0', 1337)
+    async with server:
+        await server.serve_forever()
+
+
+asyncio.run(main())
