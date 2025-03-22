@@ -40,9 +40,6 @@ class Game(cmd.Cmd):
         self.player_weapon = "sword"
         self.writer = writer
 
-    def default(self, line):
-        self.writer.write(f"Unknown command: {line}\n".encode())
-
     def do_exit(self, arg):
         self.writer.write(b"exit...\n")
         return b"exit\n"
@@ -60,9 +57,6 @@ class Game(cmd.Cmd):
 
     def move_player(self, dx, dy, arg):
         """Generalized player movement function"""
-        if arg:
-            self.writer.write(b"Move commands should not have arguments.\n")
-            return
         self.player_x = (self.player_x + dx) % self.field_size
         self.player_y = (self.player_y + dy) % self.field_size
         self.writer.write(f"Moved to ({self.player_x}, {self.player_y})\n".encode())
@@ -195,6 +189,82 @@ async def handle_client(reader, writer):
         if data == b'exit\n':
             break
         command = data.decode()
+
+        test_command = shlex.split(command)
+        allowed_commands = {"addmon", "attack",
+        "up", "down", "left", "right", "exit", "status"}
+        field_size = 10
+
+        if test_command[0] not in allowed_commands:
+            writer.write(b"Unknown command\n")
+            continue
+
+        if test_command[0] == ["up", "down", "left", "right"]:
+            if len(test_command) != 1:
+                writer.write(b"Invalid arguments\n")
+                continue
+
+        if test_command[0] == "addmon":
+            usage = "Usage: addmon <NAME> hello <MESSAGE> hp <HP> coords <X> <Y>"
+            args = test_command[1:]
+            if not args:
+                writer.write(f"Invalid arguments\n{usage}\n".encode())
+                continue
+
+            name = args[0]
+            if name not in list_cows() | game.custom_monsters.keys():
+                writer.write(f"Unknown monster {name}\n".encode())
+                continue
+
+
+            params = {}
+            param_names = ["hello", "hp", "coords"]
+            expected_params = 3
+            i = 1
+
+            try:
+                while i < len(args):
+                    if args[i] in param_names:
+                        param = args[i]
+                        if param == "coords":
+                            params[param] = (int(args[i + 1]), int(args[i + 2]))
+                            i += 3
+                        else:
+                            params[param] = args[i + 1]
+                            i += 2
+                    else:
+                        writer.write(f"Invalid argument: {args[i]}\n{usage}\n".encode())
+                        continue
+
+                if len(params) != expected_params:
+                    writer.write(f"Invalid number of arguments\n{usage}\n".encode())
+                    continue
+                x, y = params['coords']
+
+                if not (0 <= x < field_size and 0 <= y < field_size):
+                    writer.write(
+                        f"Invalid coordinates\nField size is {field_size}x{field_size}\n".encode())
+                    continue
+
+            except (ValueError, IndexError):
+                writer.write(f"Invalid arguments\n{usage}\n".encode())
+                continue
+
+        if test_command[0] == "attack":
+            args = test_command[1:]
+            weapons = {"sword","spear", "axe"}
+
+            try:
+                if "with" == args[1]:
+                    if args[2] not in weapons:
+                        writer.write(b"Unknown weapon\n")
+                        continue
+
+            except IndexError:
+                writer.write(b"Invalid argument\n")
+                continue
+
+
         game.onecmd(command)
         writer.write(b">> ")
         await writer.drain()
