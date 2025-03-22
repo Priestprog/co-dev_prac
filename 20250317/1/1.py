@@ -40,6 +40,16 @@ class Game(cmd.Cmd):
         self.player_weapon = "sword"
         self.writer = writer
 
+    def default(self, line):
+        self.writer.write(f"Unknown command: {line}\n".encode())
+
+    def do_exit(self, arg):
+        self.writer.write(b"exit...\n")
+        return b"exit\n"
+
+    def do_status(self, arg):
+        self.writer.write(b"Server work.\n")
+
     def encounter(self, x, y):
         if (x, y) in self.monsters:
             name, hello, hp = self.monsters[(x, y)]
