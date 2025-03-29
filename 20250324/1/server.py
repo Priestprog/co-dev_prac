@@ -1,11 +1,14 @@
 import sys
 from io import StringIO
-from cowsay import read_dot_cow, cowthink, list_cows
+from cowsay import read_dot_cow, cowthink
 import shlex
 import cmd
 import readline
 import asyncio
 
+
+monsters = {}
+users = dict()
 
 class Game(cmd.Cmd):
     prompt = ">> "
@@ -27,11 +30,10 @@ class Game(cmd.Cmd):
         """))
     }
 
-    def __init__(self, writer):
+    def __init__(self, writer, nickname):
         super().__init__()
         self.player_x = 0
         self.player_y = 0
-        self.monsters = {}
         self.weapons = {
             "sword": 10,
             "spear": 15,
@@ -39,6 +41,11 @@ class Game(cmd.Cmd):
         }
         self.player_weapon = "sword"
         self.writer = writer
+        self.nickname = nickname
+
+    def say_all(self, msg):
+        for client in users.values():
+            client.write(msg)
 
     def do_exit(self, arg):
         self.writer.write(b"exit...\n")
@@ -48,8 +55,8 @@ class Game(cmd.Cmd):
         self.writer.write(b"Server work.\n")
 
     def encounter(self, x, y):
-        if (x, y) in self.monsters:
-            name, hello, hp = self.monsters[(x, y)]
+        if (x, y) in monsters:
+            name, hello, hp = monsters[(x, y)]
             if name in self.custom_monsters:
                 self.writer.write((cowthink(hello, cowfile=self.custom_monsters[name])+"\n").encode())
             else:
@@ -100,11 +107,11 @@ class Game(cmd.Cmd):
         hp = int(params['hp'])
         x, y = params['coords']
 
-        replaced = (x, y) in self.monsters
-        self.monsters[(x, y)] = (name, hello, hp)
-        self.writer.write(f"Added monster {name} at ({x}, {y}) saying {hello} with {hp} HP\n".encode())
+        replaced = (x, y) in monsters
+        monsters[(x, y)] = (name, hello, hp)
+        self.say_all(f"{self.nickname} add a monster {name} at ({x}, {y}) saying '{hello}' with {hp} HP\n".encode())
         if replaced:
-            self.writer.write(b"Replaced the old monster\n")
+            self.say_all(f"{self.nickname} replaced the old monster in ({x} {y}) to a monster {name} at ({x}, {y}) saying '{hello}' with {hp} HP \n".encode())
 
 
     def do_attack(self, arg):
@@ -116,37 +123,51 @@ class Game(cmd.Cmd):
         damage = self.weapons[self.player_weapon]
 
         x, y = self.player_x, self.player_y
-        if (x, y) not in self.monsters:
+        if (x, y) not in monsters:
             self.writer.write(b"No monster here\n")
             return
 
-        if name_monster not in self.monsters[(x,y)]:
+        if name_monster not in monsters[(x,y)]:
             self.writer.write(f"No {name_monster} here\n".encode())
             return
 
-        name, hello, hp = self.monsters[(x, y)]
+        name, hello, hp = monsters[(x, y)]
         new_hp = hp - damage
 
-        self.writer.write(f"Attacked {name_monster}, damage {damage} hp\n".encode())
         if new_hp <= 0:
-            del self.monsters[(x, y)]
-            self.writer.write(f"{name_monster} died\n".encode())
+            del monsters[(x, y)]
+            self.say_all(f"{self.nickname} attacked {name_monster} in ({x}, {y}), damage {damage} hp\n"
+                         f"{name_monster} died\n".encode())
         else:
-            self.monsters[(x, y)] = (name_monster, hello, new_hp)
-            self.writer.write(f"{name_monster} now has {new_hp}\n".encode())
+            monsters[(x, y)] = (name_monster, hello, new_hp)
+            self.say_all(f"{self.nickname} attacked {name_monster} in ({x}, {y}), damage {damage} hp\n"
+                         f"{name_monster} now has {new_hp}\n".encode())
 
 
 class Server:
     def __init__(self, host='localhost', port=8888):
         self.host = host
         self.port = port
-        self.clients = set()
+        self.clients = dict()
 
     async def handle_client(self, reader, writer):
         addr = writer.get_extra_info('peername')
-        print(f'New connection from {addr}')
-        self.clients.add(writer)
-        game = Game(writer)
+        username = (await reader.readline()).decode().strip()
+
+        if username in users:
+            writer.write(b"ERROR\n")
+            await writer.drain()
+            writer.close()
+            await writer.wait_closed()
+            print(f"User {username} try to connected from {addr} but can't")
+            return
+        else:
+            users[username] = writer
+            print(f"User {username} connected from {addr}")
+            writer.write(b"SUCCESS\n")
+            await writer.drain()
+
+        game = Game(writer, username)
         try:
             while True:
                 msg = await reader.readline()
@@ -161,7 +182,7 @@ class Server:
             print(f'Connection error with {addr}: {e}')
         finally:
             print(f'Closing connection from {addr}')
-            self.clients.remove(writer)
+            users.pop(username)
             writer.close()
             await writer.wait_closed()
 
@@ -175,6 +196,7 @@ class Server:
 
 
 if __name__ == '__main__':
+
     try:
         asyncio.run(Server().run())
     except KeyboardInterrupt:
