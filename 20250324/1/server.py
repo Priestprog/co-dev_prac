@@ -27,7 +27,7 @@ class Game(cmd.Cmd):
         """))
     }
 
-    def __init__(self):
+    def __init__(self, writer):
         super().__init__()
         self.player_x = 0
         self.player_y = 0
@@ -38,6 +38,7 @@ class Game(cmd.Cmd):
             "axe": 20,
         }
         self.player_weapon = "sword"
+        self.writer = writer
 
     def do_exit(self, arg):
         self.writer.write(b"exit...\n")
@@ -134,42 +135,27 @@ class Game(cmd.Cmd):
             self.monsters[(x, y)] = (name_monster, hello, new_hp)
             self.writer.write(f"{name_monster} now has {new_hp}\n".encode())
 
-    def complete_attack(self, text, line, begidx, endidx):
-        words = (line[:endidx] + ".").split()
-        args_command = []
-        match len(words):
-            case 2:
-                    args_command = self.custom_monsters.keys() | list_cows()
-            case 3:
-                args_command = [ "with"]
-            case 4:
-                    args_command = self.weapons
-        return [c for c in args_command if c.startswith(text)]
-
 
 class Server:
     def __init__(self, host='localhost', port=8888):
         self.host = host
         self.port = port
         self.clients = set()
-        self.game = Game()
 
     async def handle_client(self, reader, writer):
         addr = writer.get_extra_info('peername')
         print(f'New connection from {addr}')
         self.clients.add(writer)
-
+        game = Game(writer)
         try:
             while True:
                 msg = await reader.readline()
                 if not msg:
                     break
 
-                msg = msg.decode().strip()
-
-                print(f'{addr} says: {msg}')
-
-                writer.write(f"{msg}\n".encode())
+                command = msg.decode().strip()
+                print(f'{addr} says: {command}')
+                game.onecmd(command)
 
         except Exception as e:
             print(f'Connection error with {addr}: {e}')
