@@ -9,7 +9,6 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit import PromptSession
-from scipy.optimize import brent
 
 
 class Game(cmd.Cmd):
