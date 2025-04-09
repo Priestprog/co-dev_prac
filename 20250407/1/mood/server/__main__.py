@@ -15,6 +15,7 @@ DIRECTIONS = {
     "down": (0, 1)
 }
 
+
 class Game(cmd.Cmd):
     """
     Основной класс для выполнения команд игры.
@@ -189,6 +190,7 @@ async def move_monsters_loop():
                     else:
                         client.write((cowthink(hello, cow=name) + "\n").encode())
             success = True
+
 
 class Server:
     """Сервер."""
