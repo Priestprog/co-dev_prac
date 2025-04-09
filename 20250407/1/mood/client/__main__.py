@@ -237,8 +237,6 @@ class Client:
 
 if __name__ == '__main__':
 
-    print(HOST, PORT, FIELD_SIZE, INTRO)
-
     if len(sys.argv) != 2:
         print("Usage: python client.py <username>")
         sys.exit(1)
