@@ -12,7 +12,7 @@ from ..common import HOST, PORT, FIELD_SIZE, INTRO, CUSTOM_MONSTERS
 
 history = InMemoryHistory()
 commands = ["addmon", "attack", "up", "down", "left", "right",
-            "exit", "status", "sayall"]
+            "exit", "status", "sayall", "movemonsters"]
 
 
 class DynamicCompleter(Completer):
@@ -41,6 +41,10 @@ class DynamicCompleter(Completer):
             case ["attack"]:
                 for monster in list_cows() | CUSTOM_MONSTERS.keys():
                     yield Completion(monster, start_position=0)
+
+            case ["movemonsters"]:
+                for move_mon_arg in ["on", "off"]:
+                    yield Completion(move_mon_arg, start_position=0)
 
             case[first]:
                 for cmd in commands:
@@ -178,7 +182,16 @@ class Client:
             print("Unknown command")
             return
 
-        if command == "sayall":
+        if namecommand == "movemonsters":
+            if len(test_command) != 2:
+                print("Invalid arguments")
+                return
+
+            if test_command[1] not in ["off", "on"]:
+                print("Invalid arguments")
+                return
+
+        if namecommand == "sayall":
             if len(test_command) != 2:
                 print("Invalid arguments")
                 return
@@ -230,7 +243,7 @@ class Client:
                 print(f"Invalid arguments\n{usage}")
                 return
 
-        if test_command[0] == "attack":
+        if namecommand == "attack":
             args = test_command[1:]
             weapons = {"sword", "spear", "axe"}
             try:
