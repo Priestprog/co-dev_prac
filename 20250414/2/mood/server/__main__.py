@@ -1,10 +1,17 @@
-"""Сервер Python-MUD."""
+"""
+Сервер Python-MUD с поддержкой локализации.
+"""
 from cowsay import cowthink
 import shlex
 import cmd
 import asyncio
 from ..common import HOST, PORT, FIELD_SIZE, CUSTOM_MONSTERS
 import random
+import gettext
+
+
+LOCALE_DIR = "locales"
+DEFAULT_LOCALE = "en_US.UTF-8"
 
 monsters = {}
 users = dict()
@@ -15,17 +22,20 @@ DIRECTIONS = {
     "down": (0, 1)
 }
 
+def get_translator(locale_str):
+    try:
+        if isinstance(locale_str, list):
+            locale_str = locale_str[0]
+        translator = gettext.translation('messages', LOCALE_DIR, languages=[locale_str])
+        translator.install()
+        return translator.gettext, translator.ngettext
+    except FileNotFoundError:
+        gettext.install('messages')
+        return gettext.gettext, gettext.ngettext
+
 
 class Game(cmd.Cmd):
-    """
-    Основной класс для выполнения команд игры.
-
-    Этот класс отвечает за обработку команд пользователя
-    и управление логикой игры.
-    """
-
     def __init__(self, server, writer, nickname):
-        """Инициализация игры."""
         super().__init__()
         self.server = server
         self.player_x = 0
@@ -38,37 +48,29 @@ class Game(cmd.Cmd):
         self.player_weapon = "sword"
         self.writer = writer
         self.nickname = nickname
+        self.locale = DEFAULT_LOCALE
+        self._, self.ngettext = get_translator(self.locale)
 
     def say_all(self, msg):
-        """
-        Отобразить сообщение абсолютно всем.
-
-        Нужно для сообщений об убийстве моба и его создании.
-        """
         for client in users.values():
-            client.write(msg)
+            game = getattr(client, 'game', None)
+            if game:
+                game._, game.ngettext = get_translator(game.locale)
+                client.write(msg)
 
     def do_sayall(self, message):
-        """
-        Отобразить сообщение всем, кроме пишущего.
-
-        Нужно для чатика.
-        """
         for client in users.values():
             if client != self.writer:
-                client.write(f"{self.nickname}: {shlex.split(message)[0]}\n".encode())
+                client.write(self._("{}: {}\n").format(self.nickname, shlex.split(message)[0]).encode())
 
     def do_exit(self, arg):
-        """Выход из игры."""
-        self.writer.write(b"exit...\n")
+        self.writer.write(self._("exit...\n").encode())
         return b"exit\n"
 
     def do_status(self, arg):
-        """Отобразить статус сервера для отладки."""
-        self.writer.write(b"Server work.\n")
+        self.writer.write(self._("Server work.\n").encode())
 
     def encounter(self, x, y):
-        """Энкаунтер при встрече с монстром."""
         if (x, y) in monsters:
             name, hello, hp = monsters[(x, y)]
             if name in CUSTOM_MONSTERS:
@@ -77,35 +79,24 @@ class Game(cmd.Cmd):
                 self.writer.write((cowthink(hello, cow=name) + "\n").encode())
 
     def move_player(self, dx, dy, arg):
-        """
-        Общая функция передвижения игрока по полю.
-
-        Она получает только изменения координат dx, dy от команд
-        up, down, left, right.
-        """
         self.player_x = (self.player_x + dx) % FIELD_SIZE
         self.player_y = (self.player_y + dy) % FIELD_SIZE
-        self.writer.write(f"Moved to ({self.player_x}, {self.player_y})\n".encode())
+        self.writer.write(self._("Moved to ({}, {})\n").format(self.player_x, self.player_y).encode())
         self.encounter(self.player_x, self.player_y)
 
     def do_up(self, arg):
-        """Движение вверх."""
         self.move_player(0, -1, arg)
 
     def do_down(self, arg):
-        """Движение вниз."""
         self.move_player(0, 1, arg)
 
     def do_left(self, arg):
-        """Движение влево."""
         self.move_player(-1, 0, arg)
 
     def do_right(self, arg):
-        """Движение вправо."""
         self.move_player(1, 0, arg)
 
     def do_addmon(self, arg):
-        """Добавить монстра на поле."""
         args = shlex.split(arg)
         name = args[0]
         params = {}
@@ -128,13 +119,25 @@ class Game(cmd.Cmd):
 
         replaced = (x, y) in monsters
         monsters[(x, y)] = (name, hello, hp)
-        self.say_all(f"{self.nickname} add a monster {name} at ({x}, {y}) saying '{hello}' with {hp} HP\n".encode())
+
+        hp_msg = self.ngettext(
+            "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n",
+            "{} added a monster {} at ({}, {}) saying '{}' with {} health points\n",
+            hp
+        ).format(self.nickname, name, x, y, hello, hp)
+
+        self.say_all(self._(hp_msg).encode())
+
         if replaced:
-            self.say_all(f"{self.nickname} replaced the old monster in ({x} {y}) to a monster {name}"
-                         f" at ({x}, {y}) saying '{hello}' with {hp} HP \n".encode())
+            hp_repl_msg = self.ngettext(
+                "{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health point\n",
+                "{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health points\n",
+                hp
+            ).format(self.nickname, x, y, name, x, y, hello, hp)
+
+            self.say_all(self._(hp_repl_msg).encode())
 
     def do_attack(self, arg):
-        """Атаковать монстра с выбором оружия."""
         args = shlex.split(arg)
         name_monster = args[0]
         self.player_weapon = args[2]
@@ -142,11 +145,11 @@ class Game(cmd.Cmd):
 
         x, y = self.player_x, self.player_y
         if (x, y) not in monsters:
-            self.writer.write(b"No monster here\n")
+            self.writer.write(self._("No monster here\n").encode())
             return
 
         if name_monster not in monsters[(x, y)]:
-            self.writer.write(f"No {name_monster} here\n".encode())
+            self.writer.write(self._("No {} here\n").format(name_monster).encode())
             return
 
         name, hello, hp = monsters[(x, y)]
@@ -154,36 +157,45 @@ class Game(cmd.Cmd):
 
         if new_hp <= 0:
             del monsters[(x, y)]
-            self.say_all(f"{self.nickname} attacked {name_monster} in ({x}, {y}), damage {damage} hp\n"
-                         f"{name_monster} died\n".encode())
+            self.say_all(self._("{} attacked {} in ({}, {}), damage {} hp\n{} died\n")
+                         .format(self.nickname, name_monster, x, y, damage, name_monster).encode())
         else:
             monsters[(x, y)] = (name_monster, hello, new_hp)
-            self.say_all(f"{self.nickname} attacked {name_monster} in ({x}, {y}), damage {damage} hp\n"
-                         f"{name_monster} now has {new_hp}\n".encode())
+            hp_msg = self.ngettext(
+                "{} now has {} health point\n",
+                "{} now has {} health points\n",
+                new_hp
+            ).format(name_monster, new_hp)
+            self.say_all(self._("{} attacked {} in ({}, {}), damage {} hp\n")
+                         .format(self.nickname, name_monster, x, y, damage).encode() + hp_msg.encode())
 
     def do_movemonsters(self, arg):
-        """
-        Включить или выключить движение монстров.
-
-        Использование: movemonsters on / movemonsters off
-        """
-
         if arg == "on":
             if self.server.monsters_enabled and self.server.monsters_task and not self.server.monsters_task.done():
-                self.writer.write("Moving monsters: on\n".encode())
+                self.writer.write(self._("Moving monsters: on\n").encode())
             else:
                 self.server.monsters_enabled = True
                 self.server.monsters_task = asyncio.create_task(move_monsters_loop())
-                self.say_all("Moving monsters: on\n".encode())
+                self.say_all(self._("Moving monsters: on\n").encode())
         elif arg == "off":
             if self.server.monsters_task and not self.server.monsters_task.done():
                 self.server.monsters_task.cancel()
             self.server.monsters_enabled = False
-            self.say_all("Moving monsters: off\n".encode())
+            self.say_all(self._("Moving monsters: off\n").encode())
+
+    def do_locale(self, arg):
+        args = shlex.split(arg)
+        if args:
+            locale_str = args[0]
+        else:
+            locale_str = DEFAULT_LOCALE
+
+        self.locale = locale_str
+        self._, self.ngettext = get_translator(self.locale)
+        self.writer.write(self._("Set up locale: ").encode() + self.locale.encode() + b"\n")
 
 
 async def move_monsters_loop():
-    """Циклическое перемещение монстров каждые 30 секунд."""
     while True:
         await asyncio.sleep(30)
         success = False
@@ -201,15 +213,19 @@ async def move_monsters_loop():
                 continue
             del monsters[(old_x, old_y)]
             monsters[(new_x, new_y)] = (name, hello, hp)
-            monster_moved_massage = f"{name} moved one cell {direction}\n".encode()
             for client in users.values():
-                client.write(monster_moved_massage)
-                player = getattr(client, 'game', None)
-                if player and player.player_x == new_x and player.player_y == new_y:
-                    if name in CUSTOM_MONSTERS:
-                        client.write((cowthink(hello, cowfile=CUSTOM_MONSTERS[name]) + "\n").encode())
-                    else:
-                        client.write((cowthink(hello, cow=name) + "\n").encode())
+                game = getattr(client, 'game', None)
+                if game:
+                    if game:
+                        game._, game.ngettext = get_translator(game.locale)
+                        monster_moved_massage = game._("{} moved one cell {}\n").format(name, direction).encode()
+                        client.write(monster_moved_massage)
+
+                    if game.player_x == new_x and game.player_y == new_y:
+                        if name in CUSTOM_MONSTERS:
+                            client.write((cowthink(hello, cowfile=CUSTOM_MONSTERS[name]) + "\n").encode())
+                        else:
+                            client.write((cowthink(hello, cow=name) + "\n").encode())
             success = True
 
 
