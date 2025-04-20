@@ -51,12 +51,16 @@ class Game(cmd.Cmd):
         self.locale = DEFAULT_LOCALE
         self._, self.ngettext = get_translator(self.locale)
 
-    def say_all(self, msg):
+    def say_all(self, msg, *args, plural_msg=None, n=None):
         for client in users.values():
             game = getattr(client, 'game', None)
             if game:
                 game._, game.ngettext = get_translator(game.locale)
-                client.write(msg)
+                if plural_msg is not None and n is not None:
+                    translated = game.ngettext(msg, plural_msg, n).format(*args)
+                else:
+                    translated = game._(msg).format(*args)
+                client.write(translated.encode())
 
     def do_sayall(self, message):
         for client in users.values():
@@ -120,22 +124,20 @@ class Game(cmd.Cmd):
         replaced = (x, y) in monsters
         monsters[(x, y)] = (name, hello, hp)
 
-        hp_msg = self.ngettext(
-            "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n",
-            "{} added a monster {} at ({}, {}) saying '{}' with {} health points\n",
-            hp
-        ).format(self.nickname, name, x, y, hello, hp)
-
-        self.say_all(self._(hp_msg).encode())
-
         if replaced:
-            hp_repl_msg = self.ngettext(
+            self.say_all(
                 "{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health point\n",
-                "{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health points\n",
-                hp
-            ).format(self.nickname, x, y, name, x, y, hello, hp)
-
-            self.say_all(self._(hp_repl_msg).encode())
+                self.nickname, x, y, name, x, y, hello, hp,
+                plural_msg="{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health points\n",
+                n=hp
+            )
+        else:
+            self.say_all(
+                "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n",
+                self.nickname, name, x, y, hello, hp,
+                plural_msg="{} added a monster {} at ({}, {}) saying '{}' with {} health points\n",
+                n=hp
+            )
 
     def do_attack(self, arg):
         args = shlex.split(arg)
@@ -157,17 +159,18 @@ class Game(cmd.Cmd):
 
         if new_hp <= 0:
             del monsters[(x, y)]
-            self.say_all(self._("{} attacked {} in ({}, {}), damage {} hp\n{} died\n")
-                         .format(self.nickname, name_monster, x, y, damage, name_monster).encode())
+            self.say_all(
+                "{} attacked {} in ({}, {}), damage {} hp\n{} died\n",
+                self.nickname, name_monster, x, y, damage, name_monster
+            )
         else:
             monsters[(x, y)] = (name_monster, hello, new_hp)
-            hp_msg = self.ngettext(
-                "{} now has {} health point\n",
-                "{} now has {} health points\n",
-                new_hp
-            ).format(name_monster, new_hp)
-            self.say_all(self._("{} attacked {} in ({}, {}), damage {} hp\n")
-                         .format(self.nickname, name_monster, x, y, damage).encode() + hp_msg.encode())
+            self.say_all(
+                "{} attacked {} in ({}, {}), damage {} hp\n{} now has {} health point\n",
+                self.nickname, name_monster, x, y, damage, name_monster, new_hp,
+                plural_msg="{} attacked {} in ({}, {}), damage {} hp\n{} now has {} health points\n",
+                n=new_hp
+            )
 
     def do_movemonsters(self, arg):
         if arg == "on":
@@ -176,12 +179,12 @@ class Game(cmd.Cmd):
             else:
                 self.server.monsters_enabled = True
                 self.server.monsters_task = asyncio.create_task(move_monsters_loop())
-                self.say_all(self._("Moving monsters: on\n").encode())
+                self.say_all("Moving monsters: on\n")
         elif arg == "off":
             if self.server.monsters_task and not self.server.monsters_task.done():
                 self.server.monsters_task.cancel()
             self.server.monsters_enabled = False
-            self.say_all(self._("Moving monsters: off\n").encode())
+            self.say_all("Moving monsters: off\n")
 
     def do_locale(self, arg):
         args = shlex.split(arg)
@@ -216,16 +219,15 @@ async def move_monsters_loop():
             for client in users.values():
                 game = getattr(client, 'game', None)
                 if game:
-                    if game:
-                        game._, game.ngettext = get_translator(game.locale)
-                        monster_moved_massage = game._("{} moved one cell {}\n").format(name, direction).encode()
-                        client.write(monster_moved_massage)
+                    game._, game.ngettext = get_translator(game.locale)
+                    monster_moved_massage = game._("{} moved one cell {}\n").format(name, direction).encode()
+                    client.write(monster_moved_massage)
 
-                    if game.player_x == new_x and game.player_y == new_y:
-                        if name in CUSTOM_MONSTERS:
-                            client.write((cowthink(hello, cowfile=CUSTOM_MONSTERS[name]) + "\n").encode())
-                        else:
-                            client.write((cowthink(hello, cow=name) + "\n").encode())
+                if game.player_x == new_x and game.player_y == new_y:
+                    if name in CUSTOM_MONSTERS:
+                        client.write((cowthink(hello, cowfile=CUSTOM_MONSTERS[name]) + "\n").encode())
+                    else:
+                        client.write((cowthink(hello, cow=name) + "\n").encode())
             success = True
 
 

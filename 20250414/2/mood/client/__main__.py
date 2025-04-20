@@ -46,6 +46,9 @@ class DynamicCompleter(Completer):
                 for move_mon_arg in ["on", "off"]:
                     yield Completion(move_mon_arg, start_position=0)
 
+            case ["locale"]:
+                yield Completion("ru_RU.UTF8", start_position=0)
+
             case[first]:
                 for cmd in commands:
                     if cmd.startswith(first) and first != cmd:
