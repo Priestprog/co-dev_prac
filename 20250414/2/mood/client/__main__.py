@@ -47,7 +47,8 @@ class DynamicCompleter(Completer):
                     yield Completion(move_mon_arg, start_position=0)
 
             case ["locale"]:
-                yield Completion("ru_RU.UTF8", start_position=0)
+                for loc in ["ru_RU.UTF8","en_US.UTF8"]:
+                    yield Completion(loc, start_position=0)
 
             case[first]:
                 for cmd in commands:
