@@ -293,9 +293,12 @@ class Server:
             await server.serve_forever()
 
 
-if __name__ == '__main__':
-
+def run_server():
     try:
         asyncio.run(Server().run())
     except KeyboardInterrupt:
         print('Server stopped successfully.')
+
+
+if __name__ == '__main__':
+    run_server()
