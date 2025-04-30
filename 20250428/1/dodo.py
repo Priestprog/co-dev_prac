@@ -6,43 +6,30 @@ DOIT_CONFIG = {"default_tasks": ["html"]}
 
 
 def task_pot():
-    """Генерация .pot шаблона"""
+    """[Babel] Генерация POT-шаблона"""
     return {
-        'actions': ['sphinx-build -b gettext docs locale'],
-        'targets': ['locale/index.pot'],
+        'actions': ['pybabel extract -F babel.cfg -o locales/messages.pot .'],
+        'targets': ['locales/messages.pot'],
         'clean': True,
     }
-
 
 def task_po():
-    """Обновление .po переводов"""
+    """[Babel] Обновление PO-файлов из POT-шаблона"""
     return {
-        'actions': ['sphinx-intl update -p locale -l ru'],
-        'file_dep': ['locale/index.pot'],
-        'targets': ['locale/ru/LC_MESSAGES/index.po'],
+        'actions': ['pybabel update -D messages -d locales -l ru_RU -i locales/messages.pot'],
+        'file_dep': ['locales/messages.pot'],
+        'targets': ['locales/ru_RU/LC_MESSAGES/messages.po'],
         'clean': True,
     }
-
 
 def task_mo():
-    """Компиляция переводов"""
+    """[Babel] Компиляция переводов (.po -> .mo)"""
     return {
-        'actions': ['sphinx-intl build'],
-        'file_dep': ['locale/ru/LC_MESSAGES/index.po'],
-        'targets': ['locale/ru/LC_MESSAGES/index.mo'],
+        'actions': ['pybabel compile -D messages -d locales'],
+        'file_dep': ['locales/ru_RU/LC_MESSAGES/messages.po'],
+        'targets': ['locales/ru_RU/LC_MESSAGES/messages.mo'],
         'clean': True,
     }
-
-
-
-
-
-
-
-
-
-
-
 
 def task_i18n():
     """Полная генерация переводов"""
@@ -52,18 +39,7 @@ def task_i18n():
     }
 
 def task_html():
-    """Генерация HTML-документации с учётом перевода"""
-    rst_files = glob.glob('source/*.rst')
-    return {
-        'actions': ['sphinx-build -b html source build/html'],
-        'file_dep': ['source/conf.py'] + rst_files,
-        'targets': ['build/html/index.html'],
-        'task_dep': ['i18n'],
-        'clean': [(shutil.rmtree, ['build/html'], {'ignore_errors': True})],
-    }
-
-def task_docs():
-    """Генерация text-документации Sphinx (без перевода)"""
+    """Генерация html-документации Sphinx"""
     rst_files = glob.glob('source/*.rst')
     return {
         'actions': ["sphinx-build -b html source build/html"],
