@@ -60,7 +60,8 @@ class Game(cmd.Cmd):
                     translated = game.ngettext(msg, plural_msg, n).format(*args)
                 else:
                     translated = game._(msg).format(*args)
-                client.write(translated.encode())
+                if client != self.writer:
+                    client.write(translated.encode())
 
     def do_sayall(self, message):
         for client in users.values():
@@ -125,6 +126,11 @@ class Game(cmd.Cmd):
         monsters[(x, y)] = (name, hello, hp)
 
         if replaced:
+            self.writer.write(self.ngettext(
+                "{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health point\n",
+                "{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health points\n",
+                hp
+            ).format(self.nickname, x, y, name, x, y, hello, hp).encode())
             self.say_all(
                 "{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) saying '{}' with {} health point\n",
                 self.nickname, x, y, name, x, y, hello, hp,
@@ -132,6 +138,11 @@ class Game(cmd.Cmd):
                 n=hp
             )
         else:
+            self.writer.write(self.ngettext(
+                "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n",
+                "{} added a monster {} at ({}, {}) saying '{}' with {} health points\n",
+                hp
+            ).format(self.nickname, name, x, y, hello, hp).encode())
             self.say_all(
                 "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n",
                 self.nickname, name, x, y, hello, hp,
@@ -159,12 +170,20 @@ class Game(cmd.Cmd):
 
         if new_hp <= 0:
             del monsters[(x, y)]
+            self.writer.write(self._(
+                "{} attacked {} in ({}, {}), damage {} hp\n{} died\n"
+            ).format(self.nickname, name_monster, x, y, damage, name_monster).encode())
             self.say_all(
                 "{} attacked {} in ({}, {}), damage {} hp\n{} died\n",
                 self.nickname, name_monster, x, y, damage, name_monster
             )
         else:
             monsters[(x, y)] = (name_monster, hello, new_hp)
+            self.writer.write(self.ngettext(
+                "{} attacked {} in ({}, {}), damage {} hp\n{} now has {} health point\n",
+                "{} attacked {} in ({}, {}), damage {} hp\n{} now has {} health points\n",
+                new_hp
+            ).format(self.nickname, name_monster, x, y, damage, name_monster, new_hp).encode())
             self.say_all(
                 "{} attacked {} in ({}, {}), damage {} hp\n{} now has {} health point\n",
                 self.nickname, name_monster, x, y, damage, name_monster, new_hp,
@@ -179,11 +198,13 @@ class Game(cmd.Cmd):
             else:
                 self.server.monsters_enabled = True
                 self.server.monsters_task = asyncio.create_task(move_monsters_loop())
+                self.writer.write(self._("Moving monsters: on\n").encode())
                 self.say_all("Moving monsters: on\n")
         elif arg == "off":
             if self.server.monsters_task and not self.server.monsters_task.done():
                 self.server.monsters_task.cancel()
             self.server.monsters_enabled = False
+            self.writer.write(self._("Moving monsters: off\n").encode())
             self.say_all("Moving monsters: off\n")
 
     def do_locale(self, arg):

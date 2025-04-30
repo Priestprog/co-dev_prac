@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-05 15:35+0300\n"
-"PO-Revision-Date: 2025-04-20 02:55+0300\n"
+"POT-Creation-Date: 2025-05-05 17:07+0300\n"
+"PO-Revision-Date: 2025-05-05 17:10+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
 "Language-Team: ru_RU <LL@li.org>\n"
@@ -19,113 +19,106 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: mood/server/__main__.py:68
+#: mood/server/__main__.py:69
 #, python-brace-format
 msgid "{}: {}\n"
 msgstr "{}: {}\n"
 
-#: mood/server/__main__.py:71
+#: mood/server/__main__.py:72
 msgid "exit...\n"
 msgstr "Выход...\n"
 
-#: mood/server/__main__.py:75
+#: mood/server/__main__.py:76
 msgid "Server work.\n"
 msgstr "Сервер работает\n"
 
-#: mood/server/__main__.py:88
+#: mood/server/__main__.py:89
 #, python-brace-format
 msgid "Moved to ({}, {})\n"
 msgstr "Переместился на ({}, {})\n"
 
-#: mood/server/__main__.py:150
+#: mood/server/__main__.py:130
+#, python-brace-format
+msgid ""
+"{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) "
+"saying '{}' with {} health point\n"
+msgid_plural ""
+"{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) "
+"saying '{}' with {} health points\n"
+msgstr[0] ""
+"{} заменил старого монстра на ({}, {}) на монстра {} на ({}, {}), который"
+" говорит '{}' и имеет {} очко здоровья\n"
+msgstr[1] ""
+"{} заменил старого монстра на ({}, {}) на монстра {} на ({}, {}), который"
+" говорит '{}' и имеет {} очка здоровья\n"
+msgstr[2] ""
+"{} заменил старого монстра на ({}, {}) на монстра {} на ({}, {}), который"
+" говорит '{}' и имеет {} очков здоровья\n"
+
+#: mood/server/__main__.py:142
+#, python-brace-format
+msgid "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n"
+msgid_plural "{} added a monster {} at ({}, {}) saying '{}' with {} health points\n"
+msgstr[0] ""
+"{} добавил монстра {} на ({}, {}), который говорит '{}' и имеет {} очко "
+"здоровья\n"
+msgstr[1] ""
+"{} добавил монстра {} на ({}, {}), который говорит '{}' и имеет {} очка "
+"здоровья\n"
+msgstr[2] ""
+"{} добавил монстра {} на ({}, {}), который говорит '{}' и имеет {} очков "
+"здоровья\n"
+
+#: mood/server/__main__.py:161
 msgid "No monster here\n"
 msgstr "Здесь нет монстра\n"
 
-#: mood/server/__main__.py:154
+#: mood/server/__main__.py:165
 #, python-brace-format
 msgid "No {} here\n"
 msgstr "Нет {} здесь\n"
 
-#: mood/server/__main__.py:178
+#: mood/server/__main__.py:174
+#, python-brace-format
+msgid ""
+"{} attacked {} in ({}, {}), damage {} hp\n"
+"{} died\n"
+msgstr ""
+"{} атаковал {} на ({}, {}), урон {} хп\n"
+"{} умер\n"
+
+#: mood/server/__main__.py:183
+#, python-brace-format
+msgid ""
+"{} attacked {} in ({}, {}), damage {} hp\n"
+"{} now has {} health point\n"
+msgid_plural ""
+"{} attacked {} in ({}, {}), damage {} hp\n"
+"{} now has {} health points\n"
+msgstr[0] ""
+"{} атаковал {} на ({}, {}), урон {} хп\n"
+"У {} осталось {} очко здоровья\n"
+msgstr[1] ""
+"{} атаковал {} на ({}, {}), урон {} хп\n"
+"У {} осталось {} очка здоровья\n"
+msgstr[2] ""
+"{} атаковал {} на ({}, {}), урон {} хп\n"
+"У {} осталось {} очков здоровья\n"
+
+#: mood/server/__main__.py:197 mood/server/__main__.py:201
 msgid "Moving monsters: on\n"
 msgstr "Ходячие монстры: включены\n"
 
-#: mood/server/__main__.py:198
+#: mood/server/__main__.py:207
+msgid "Moving monsters: off\n"
+msgstr "Ходячие монстры: выключены\n"
+
+#: mood/server/__main__.py:219
 msgid "Set up locale: "
 msgstr "Установлена локаль: "
 
-#: mood/server/__main__.py:223
+#: mood/server/__main__.py:244
 #, python-brace-format
 msgid "{} moved one cell {}\n"
 msgstr "{} переместился на одну клетку {}\n"
-
-#~ msgid "{} now has {} health point\n"
-#~ msgid_plural "{} now has {} health points\n"
-#~ msgstr[0] "У {} осталось {} очко здоровья\n"
-#~ msgstr[1] "У {} осталось {} очка здоровья\n"
-#~ msgstr[2] "У {} осталось {} очков здоровья\n"
-
-#~ msgid "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n"
-#~ msgid_plural "{} added a monster {} at ({}, {}) saying '{}' with {} health points\n"
-#~ msgstr[0] ""
-#~ "{} добавил монстра {} на ({}, {}),"
-#~ " который говорит '{}' и имеет {} "
-#~ "очко здоровья\n"
-#~ msgstr[1] ""
-#~ "{} добавил монстра {} на ({}, {}),"
-#~ " который говорит '{}' и имеет {} "
-#~ "очка здоровья\n"
-#~ msgstr[2] ""
-#~ "{} добавил монстра {} на ({}, {}),"
-#~ " который говорит '{}' и имеет {} "
-#~ "очков здоровья\n"
-
-#~ msgid ""
-#~ "{} replaced the old monster in "
-#~ "({}, {}) with a monster {} at "
-#~ "({}, {}) saying '{}' with {} "
-#~ "health point\n"
-#~ msgid_plural ""
-#~ "{} replaced the old monster in "
-#~ "({}, {}) with a monster {} at "
-#~ "({}, {}) saying '{}' with {} "
-#~ "health points\n"
-#~ msgstr[0] ""
-#~ "{} заменил старого монстра на ({}, "
-#~ "{}) на монстра {} на ({}, {}), "
-#~ "который говорит '{}' и имеет {} "
-#~ "очко здоровья\n"
-#~ msgstr[1] ""
-#~ "{} заменил старого монстра на ({}, "
-#~ "{}) на монстра {} на ({}, {}), "
-#~ "который говорит '{}' и имеет {} "
-#~ "очка здоровья\n"
-#~ msgstr[2] ""
-#~ "{} заменил старого монстра на ({}, "
-#~ "{}) на монстра {} на ({}, {}), "
-#~ "который говорит '{}' и имеет {} "
-#~ "очков здоровья\n"
-
-#~ msgid ""
-#~ "{} attacked {} in ({}, {}), damage {} hp\n"
-#~ "{} died\n"
-#~ msgstr ""
-#~ "{} атаковал {} на ({}, {}), урон {} хп\n"
-#~ "{} умер\n"
-
-#~ msgid ""
-#~ "{} attacked {} in ({}, {}), damage {} hp\n"
-#~ "{} now has {} health point\n"
-#~ msgid_plural ""
-#~ "{} attacked {} in ({}, {}), damage {} hp\n"
-#~ "{} now has {} health points\n"
-#~ msgstr[0] ""
-#~ "{} атаковал {} на ({}, {}), урон {} хп\n"
-#~ "У {} осталось {} очко здоровья\n"
-#~ msgstr[1] ""
-#~ "{} атаковал {} на ({}, {}), урон {} хп\n"
-#~ "У {} осталось {} очка здоровья\n"
-#~ msgstr[2] ""
-#~ "{} атаковал {} на ({}, {}), урон {} хп\n"
-#~ "У {} осталось {} очков здоровья\n"
 

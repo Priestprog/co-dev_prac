@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-05-05 15:35+0300\n"
+"POT-Creation-Date: 2025-05-05 17:07+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,42 +17,82 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: mood/server/__main__.py:68
+#: mood/server/__main__.py:69
 #, python-brace-format
 msgid "{}: {}\n"
 msgstr ""
 
-#: mood/server/__main__.py:71
+#: mood/server/__main__.py:72
 msgid "exit...\n"
 msgstr ""
 
-#: mood/server/__main__.py:75
+#: mood/server/__main__.py:76
 msgid "Server work.\n"
 msgstr ""
 
-#: mood/server/__main__.py:88
+#: mood/server/__main__.py:89
 #, python-brace-format
 msgid "Moved to ({}, {})\n"
 msgstr ""
 
-#: mood/server/__main__.py:150
+#: mood/server/__main__.py:130
+#, python-brace-format
+msgid ""
+"{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) "
+"saying '{}' with {} health point\n"
+msgid_plural ""
+"{} replaced the old monster in ({}, {}) with a monster {} at ({}, {}) "
+"saying '{}' with {} health points\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: mood/server/__main__.py:142
+#, python-brace-format
+msgid "{} added a monster {} at ({}, {}) saying '{}' with {} health point\n"
+msgid_plural "{} added a monster {} at ({}, {}) saying '{}' with {} health points\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: mood/server/__main__.py:161
 msgid "No monster here\n"
 msgstr ""
 
-#: mood/server/__main__.py:154
+#: mood/server/__main__.py:165
 #, python-brace-format
 msgid "No {} here\n"
 msgstr ""
 
-#: mood/server/__main__.py:178
+#: mood/server/__main__.py:174
+#, python-brace-format
+msgid ""
+"{} attacked {} in ({}, {}), damage {} hp\n"
+"{} died\n"
+msgstr ""
+
+#: mood/server/__main__.py:183
+#, python-brace-format
+msgid ""
+"{} attacked {} in ({}, {}), damage {} hp\n"
+"{} now has {} health point\n"
+msgid_plural ""
+"{} attacked {} in ({}, {}), damage {} hp\n"
+"{} now has {} health points\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: mood/server/__main__.py:197 mood/server/__main__.py:201
 msgid "Moving monsters: on\n"
 msgstr ""
 
-#: mood/server/__main__.py:198
+#: mood/server/__main__.py:207
+msgid "Moving monsters: off\n"
+msgstr ""
+
+#: mood/server/__main__.py:219
 msgid "Set up locale: "
 msgstr ""
 
-#: mood/server/__main__.py:223
+#: mood/server/__main__.py:244
 #, python-brace-format
 msgid "{} moved one cell {}\n"
 msgstr ""

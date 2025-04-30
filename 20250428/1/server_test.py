@@ -68,8 +68,11 @@ class TestMudServer(unittest.IsolatedAsyncioTestCase):
         response_add = await self.send_command("addmon dragon hello 'Hi' hp 100 coords 0 1")
         self.assertIn("priest added a monster dragon at (0, 1)", response_add)
 
+        response_locale = await self.send_command("locale ru_RU.UTF8")
+        self.assertIn("Установлена локаль: ru_RU.UTF8\n", response_locale)
+
         response_move = await self.send_command("down")
-        predicted_response = r"""Moved to (0, 1)
+        predicted_response = r"""Переместился на (0, 1)
  ____
 ( Hi )
  ----
@@ -98,4 +101,4 @@ class TestMudServer(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(expected.strip(), actual.strip())
 
         response_attack = await self.send_command("attack dragon with sword")
-        self.assertIn("priest attacked dragon in (0, 1), damage 10 hp\ndragon now has 90 health points\n", response_attack)
+        self.assertIn("priest атаковал dragon на (0, 1), урон 10 хп\nУ dragon осталось 90 очков здоровья\n", response_attack)

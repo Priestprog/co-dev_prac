@@ -55,6 +55,7 @@ def task_test():
             'python3 -m unittest server_test.py',
             'python3 -m unittest client_test.py',
         ],
+        'task_dep': ['i18n']
     }
 
 
