@@ -9,6 +9,7 @@ prompt-toolkit = "*"
 sphinx = "*"
 sphinx-autodoc-typehints = "*"
 babel = "*"
+doit = "*"
 
 [dev-packages]
 
